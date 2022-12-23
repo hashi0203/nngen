@@ -11,7 +11,7 @@ import nngen.basic_types as bt
 import nngen.util as util
 
 
-STATIONARY_FILETER = 0
+STATIONARY_FILTER = 0
 STATIONARY_INPUT = 1
 
 
@@ -1611,7 +1611,7 @@ class conv2d(bt._Operator):
         self.keep_input_value = keep_input
 
         if self.stationary == 'filter':
-            data_stationary = STATIONARY_FILETER
+            data_stationary = STATIONARY_FILTER
         else:
             data_stationary = STATIONARY_INPUT
 
@@ -2087,7 +2087,7 @@ class conv2d(bt._Operator):
         state_init = fsm.current
 
         # state_read_filter
-        fsm.If(self.data_stationary == STATIONARY_FILETER).goto_next()
+        fsm.If(self.data_stationary == STATIONARY_FILTER).goto_next()
 
         # --------------------
         # ReadFilter phase
@@ -2113,7 +2113,7 @@ class conv2d(bt._Operator):
         fsm.If(skip_read_filter).goto_from(
             state_read_filter, state_read_filter_end)
         # state_read_act
-        fsm.If(self.data_stationary == STATIONARY_FILETER).goto_next()
+        fsm.If(self.data_stationary == STATIONARY_FILTER).goto_next()
 
         # --------------------
         # ReadAct phase
@@ -2196,7 +2196,7 @@ class conv2d(bt._Operator):
         state_read_act_end = fsm.current
         fsm.If(skip_read_act).goto_from(state_read_act, state_read_act_end)
         # state_read_act
-        fsm.If(self.data_stationary == STATIONARY_FILETER).goto_next()
+        fsm.If(self.data_stationary == STATIONARY_FILTER).goto_next()
 
         # --------------------
         # Comp phase
@@ -2566,11 +2566,11 @@ class conv2d(bt._Operator):
                 )
 
         # stream_out_local
-        # STATIONARY_FILETER
-        comp_fsm.If(self.data_stationary == STATIONARY_FILETER)(
+        # STATIONARY_FILTER
+        comp_fsm.If(self.data_stationary == STATIONARY_FILTER)(
             stream_out_local_col.add(next_stream_num_ops)
         )
-        comp_fsm.If(self.data_stationary == STATIONARY_FILETER,
+        comp_fsm.If(self.data_stationary == STATIONARY_FILTER,
                     col_count >= self.max_col_count)(
             stream_out_local_col(0)
         )
@@ -2672,7 +2672,7 @@ class conv2d(bt._Operator):
                 # keep_filter or STATIONARY_INPUT
                 b = fsm.current
                 fsm.If(vg.Ors(
-                    vg.Ands(self.data_stationary == STATIONARY_FILETER, self.keep_filter),
+                    vg.Ands(self.data_stationary == STATIONARY_FILTER, self.keep_filter),
                     self.data_stationary == STATIONARY_INPUT)).goto_from(state_mode_select, b)
 
                 fsm.If(vg.Not(dma_out_mask)).goto_next()
@@ -2689,7 +2689,7 @@ class conv2d(bt._Operator):
                 # not keep_filter and not STATIONARY_INPUT
                 state_ram_select = fsm.current
                 fsm.If(vg.Not(vg.Ors(
-                    vg.Ands(self.data_stationary == STATIONARY_FILETER, self.keep_filter),
+                    vg.Ands(self.data_stationary == STATIONARY_FILTER, self.keep_filter),
                     self.data_stationary == STATIONARY_INPUT))).goto_from(state_mode_select,
                                                                           state_ram_select)
                 fsm.inc()
@@ -2727,7 +2727,7 @@ class conv2d(bt._Operator):
             out_laddr_offset.add(next_out_write_size)
         )
 
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                vg.Not(self.keep_filter))(
             out_base_offset_col.add(self.out_col_step),
             out_col_count.inc()
@@ -2745,23 +2745,23 @@ class conv2d(bt._Operator):
             sync_out_count.add(self.inc_sync_out)
         )
 
-        fsm.If(vg.Ors(vg.Ands(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(vg.Ors(vg.Ands(self.data_stationary == STATIONARY_FILTER,
                               vg.Not(self.keep_filter),
                               write_count >= self.out_num_col - 1),
-                      vg.Ands(self.data_stationary == STATIONARY_FILETER,
+                      vg.Ands(self.data_stationary == STATIONARY_FILTER,
                               self.keep_filter),
                       self.data_stationary == STATIONARY_INPUT))(
             sync_out_count.add(self.inc_sync_out + self.inc_sync_out_res)
         )
 
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                vg.Not(self.keep_filter)).goto(state_write_out)
 
         # STATIONARY_FILTER and STATIONARY_INPUT
-        fsm.If(vg.Ors(vg.Ands(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(vg.Ors(vg.Ands(self.data_stationary == STATIONARY_FILTER,
                               vg.Not(self.keep_filter),
                               write_count >= self.out_num_col - 1),
-                      vg.Ands(self.data_stationary == STATIONARY_FILETER,
+                      vg.Ands(self.data_stationary == STATIONARY_FILTER,
                               self.keep_filter),
                       self.data_stationary == STATIONARY_INPUT)).goto_next()
 
@@ -2776,7 +2776,7 @@ class conv2d(bt._Operator):
         # ReadFilter: offset
         update_filter = self.m.Wire(self._name('update_filter'))
         update_filter.assign(vg.Ors(
-            vg.Ands(self.data_stationary == STATIONARY_FILETER,
+            vg.Ands(self.data_stationary == STATIONARY_FILTER,
                     row_count >= self.max_row_count,
                     bat_count >= self.max_bat_count),
             vg.Ands(self.data_stationary == STATIONARY_INPUT,
@@ -2818,7 +2818,7 @@ class conv2d(bt._Operator):
         update_act.assign(vg.Ors(
             vg.Ands(self.data_stationary == STATIONARY_INPUT,
                     och_count >= self.max_och_count),
-            self.data_stationary == STATIONARY_FILETER))
+            self.data_stationary == STATIONARY_FILTER))
 
         fsm.If(update_act)(
             act_base_offset_row.add(self.act_row_step)
@@ -2912,7 +2912,7 @@ class conv2d(bt._Operator):
                 act_page_comp_offset(0),
                 act_page_dma_offset(0)
             )
-            fsm.If(self.data_stationary == STATIONARY_FILETER,
+            fsm.If(self.data_stationary == STATIONARY_FILTER,
                    row_count >= self.max_row_count,
                    bat_count >= self.max_bat_count,
                    self.keep_input)(
@@ -2934,21 +2934,21 @@ class conv2d(bt._Operator):
             out_ram_select(0)
         )
 
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                vg.Not(skip_write_out))(
             out_base_offset_col(0),
             out_base_offset_row.add(self.out_row_step),
             out_col_count(0),
             out_row_count.add(self.par_row)
         )
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                vg.Not(skip_write_out),
                prev_row_count >= self.max_row_count)(
             out_base_offset_row(0),
             out_base_offset_bat.add(self.out_bat_step),
             out_row_count(0)
         )
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                vg.Not(skip_write_out),
                prev_row_count >= self.max_row_count,
                prev_bat_count >= self.max_bat_count)(
@@ -2963,13 +2963,13 @@ class conv2d(bt._Operator):
         )
 
         # WriteOut and Comp: double buffer
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                vg.Not(out_page))(
             out_page_comp_offset(out_page_size),
             out_page_dma_offset(0),
             out_page(1)
         )
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                out_page)(
             out_page_comp_offset(0),
             out_page_dma_offset(out_page_size),
@@ -3016,7 +3016,7 @@ class conv2d(bt._Operator):
             skip_read_act(1)
         )
 
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                row_count >= self.max_row_count,
                bat_count >= self.max_bat_count,
                self.keep_input)(
@@ -3036,8 +3036,8 @@ class conv2d(bt._Operator):
             skip_write_out(0)
         )
 
-        fsm.If(self.data_stationary == STATIONARY_FILETER).goto(state_read_act)
-        fsm.If(self.data_stationary == STATIONARY_FILETER,
+        fsm.If(self.data_stationary == STATIONARY_FILTER).goto(state_read_act)
+        fsm.If(self.data_stationary == STATIONARY_FILTER,
                row_count >= self.max_row_count,
                bat_count >= self.max_bat_count).goto(state_read_filter)
 
